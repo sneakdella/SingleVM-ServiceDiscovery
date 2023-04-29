@@ -125,6 +125,3 @@ Get-vROpsAccessToken -RemoteCollector $RemoteCollector -Credential $Credential -
 $WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -Headers $Headers
 $ExactServices = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
 $FinalServices = Find-BlackListedServices -ExactServices $ExactServices
-
-Write-Host $FinalServices
-
