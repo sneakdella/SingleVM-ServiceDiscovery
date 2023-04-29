@@ -15,3 +15,5 @@ Once it has the service display names and associated service name(s) it will the
 vRealize Operations 8.10
 
 You will need to add **[[inputs.win_services]]** plugin to your telegraf.emqtt.windows.conf file on your vRealize Operations Cloud Proxy. This is located in /ucp/downloads/salt on each cloud proxy where you have the VMware Application Management Pack deployed to.
+
+If you already have telegraf deployed, you will need to re-install telegraf to have the **[[inputs.win_services]]** to apply to the Windows Server's specific Telegraf agent config.
