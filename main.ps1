@@ -83,10 +83,39 @@ function Get-ExactServiceNameByTag {
     return $hashtable
 }
 
+# Finds and removes blacklisted services from the hashtable.
+function Find-BlackListedServices {
+    param (
+        [Parameter(Mandatory=$true)]$ExactServices
+    )
+
+    try {
+        $BlackListedServices = $(Import-CSV .\BlackList.csv).ServiceName
+    }
+    catch {
+        Write-Error "UNABLE TO OPEN BLACKLIST.CSV"
+    }
+
+    $FinalServices = @{}
+
+    ForEach ($Service in $ExactServices.GetEnumerator()) {
+        #Write-Host $Service
+        #Write-Host $Service.key
+
+        If ($BlackListedServices.Contains($Service.Key)) {
+            Write-Host "SKIPPED: " $Service
+        } else {
+            #Write-Host "APPROVED: " $Service
+            #$FinalServices.Add($Service.key, $Serivce.value)
+        }
+
+    }
+}
 # Get specific Windows OS object's parent VM.
 # Commit new services to VM object
 
 Get-vROpsAccessToken -RemoteCollector $RemoteCollector -Credential $Credential -AuthSource $AuthSource #-FunctionDebug $true
 $WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -Headers $Headers
 $ExactServices = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
+Find-BlackListedServices -ExactServices $ExactServices
 
