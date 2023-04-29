@@ -48,7 +48,8 @@ function Get-vROpsAccessToken {
     $global:Headers.Add("Authorization", "vRealizeOpsToken " +$global:accesstoken.token)
 }
 
-function Get-WindowsOSObjServicesStats {
+# Get the Windows OS Object's Automatic Services
+function Get-WindowsOSObjAutomaticServices {
     param (
         [Parameter(Mandatory=$true)]$RemoteCollector,
         [Parameter(Mandatory=$true)]$Headers,
@@ -59,15 +60,19 @@ function Get-WindowsOSObjServicesStats {
 
     $StatList = $WindowsOSObjectServicesStats.values."stat-list"."stat"
     
-    $FinalOutput = @{}
+    [System.Collections.ArrayList]$FinalOutput= @()
+
+    #(?<=services:).*(?=\|)
+    #/(?<=services:).*(?=\|)/g
 
     ForEach ($stat in $StatList) {
         If (($stat.statKey -match "startup.mode") -and ($stat.data -eq "3")) {
-            Write-Host $stat.statKey $stat.data
+            $ServiceName = (Select-String -InputObject $stat.statKey -Pattern '(?<=services:).*(?=\|)').Matches[0]
+            $FinalOutput.Add($ServiceName)
         }
     }
 
-    return $WindowsOSObjectServicesStats
+    return $FinalOutput
 }
 
 # Get specific Windows OS object's service objects properties
@@ -142,8 +147,7 @@ function Find-BlackListedServices {
 # Commit new services to VM object
 
 Get-vROpsAccessToken -RemoteCollector $RemoteCollector -Credential $Credential -AuthSource $AuthSource #-FunctionDebug $true
-$WindowsOSObjectServiceStats = Get-WindowsOSObjServicesStats -RemoteCollector $RemoteCollector -Headers $Headers
-
-#$WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -Headers $Headers
-#$ExactServices = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
-#$FinalServices = Find-BlackListedServices -ExactServices $ExactServices
+$WindowsOSObjAutomaticServices = Get-WindowsOSObjAutomaticServices -RemoteCollector $RemoteCollector -Headers $Headers
+$WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -Headers $Headers
+$ExactServicesProperties = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
+$CleanedServicesProperties = Find-BlackListedServices -ExactServices $ExactServicesProperties
