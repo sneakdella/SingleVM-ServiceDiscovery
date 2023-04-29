@@ -146,7 +146,7 @@ function Find-BlackListedServices {
 
 
 # Search for Service Display Name's "servicename" i.e. Windows Event Log would be "Eventlog"
-# Output will be a final hash table of the automatic services with their attributing servicename
+# Output will be a final hash table of the automatic services with their associated servicename
 function Search-ForServiceName {
     param (
         [Parameter(Mandatory=$true)]$WindowsOSObjAutomaticServices,
@@ -154,20 +154,42 @@ function Search-ForServiceName {
     )
 
     $FinalServices = @{}
-    Write-Host $CleanedServicesProperties["Windows Event Log"]
+
     ForEach ($Service in $WindowsOSObjAutomaticServices) {
         #Write-Host $Service.ToString()
         If ($CleanedServicesProperties[$Service.ToString()]) {
             Write-Host "MATCH: " $Service.ToString() $CleanedServicesProperties[$Service.ToString()]
+            $FinalServices.Add($Service.ToString(), $CleanedServicesProperties[$Service.ToString()])
         }
     }
-
-    Write-Host $FinalServices
+    return $FinalServices
 }
 
-
 # Get specific Windows OS object's parent VM.
-# Commit new services to VM object
+<#
+function Get-ParentVirtualMachine {
+# https://10.0.0.27/suite-api/api/resources/961ab153-7fd6-4a34-9d9a-b317014f5686/relationships/PARENT?page=0&pageSize=1000&_no_links=true
+}
+#>
+
+# Check for services that are already added? I.E. Don't try to add a additional serviceavailibility 
+<#
+function Get-VMObjTelegrafCustomServices {
+
+}
+
+function Compare-ServicesAgain {
+    
+}
+#>
+
+# Finally, commit new automatic services to VM object that already don't exist
+
+<#
+function Commit-NewServicesToVMObject {
+
+}
+#>
 
 Get-vROpsAccessToken -RemoteCollector $RemoteCollector -Credential $Credential -AuthSource $AuthSource #-FunctionDebug $true
 $WindowsOSObjAutomaticServices = Get-WindowsOSObjAutomaticServices -RemoteCollector $RemoteCollector -Headers $Headers
