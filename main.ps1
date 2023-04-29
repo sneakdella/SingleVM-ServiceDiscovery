@@ -95,18 +95,28 @@ function Find-BlackListedServices {
     catch {
         Write-Error "UNABLE TO OPEN BLACKLIST.CSV"
     }
-
+    Write-Host $ExactServices
     $FinalServices = @{}
 
     ForEach ($Service in $ExactServices.GetEnumerator()) {
+
+        $SkipService = $False
+
         ForEach ($BLService in $BlackListedServices) {
             If ($Service.key -match $BLService) {
                 Write-Host "SKIPPED: " $Service "|||||" $BLService
+                $SkipService = $True
                 break
             }
         }
-        $FinalServices.Add($Service.key, $Serivce.value)
+
+        If ($SkipService -eq $False){
+            $FinalServices.Add($Service.key, $Service.value)
+        }
+        
     }
+
+    return $FinalServices
 }
 # Get specific Windows OS object's parent VM.
 # Commit new services to VM object
@@ -114,7 +124,7 @@ function Find-BlackListedServices {
 Get-vROpsAccessToken -RemoteCollector $RemoteCollector -Credential $Credential -AuthSource $AuthSource #-FunctionDebug $true
 $WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -Headers $Headers
 $ExactServices = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
-$CleanedServices = Find-BlackListedServices -ExactServices $ExactServices
+$FinalServices = Find-BlackListedServices -ExactServices $ExactServices
 
-Write-Host $CleanedServices
+Write-Host $FinalServices
 
