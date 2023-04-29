@@ -68,7 +68,7 @@ function Get-WindowsOSObjAutomaticServices {
     ForEach ($stat in $StatList) {
         If (($stat.statKey -match "startup.mode") -and ($stat.data -eq "3")) {
             $ServiceName = (Select-String -InputObject $stat.statKey -Pattern '(?<=services:).*(?=\|)').Matches[0]
-            $FinalOutput.Add($ServiceName)
+            [void]$FinalOutput.Add($ServiceName) # void or else it will add a bunch of numbers when printing
         }
     }
 
@@ -120,8 +120,8 @@ function Find-BlackListedServices {
     catch {
         Write-Error "UNABLE TO OPEN BLACKLIST.CSV"
     }
-    Write-Host $ExactServices
-    $FinalServices = @{}
+    #Write-Host $ExactServices
+    $FinalOutput = @{}
 
     ForEach ($Service in $ExactServices.GetEnumerator()) {
 
@@ -129,20 +129,43 @@ function Find-BlackListedServices {
 
         ForEach ($BLService in $BlackListedServices) {
             If ($Service.key -match $BLService) {
-                Write-Host "SKIPPED: " $Service "|||||" $BLService
+                #Write-Host "SKIPPED: " $Service "|||||" $BLService
                 $SkipService = $True
                 break
             }
         }
 
         If ($SkipService -eq $False){
-            $FinalServices.Add($Service.key, $Service.value)
+            $FinalOutput.Add($Service.key, $Service.value)
         }
         
     }
 
-    return $FinalServices
+    return $FinalOutput
 }
+
+
+# Search for Service Display Name's "servicename" i.e. Windows Event Log would be "Eventlog"
+# Output will be a final hash table of the automatic services with their attributing servicename
+function Search-ForServiceName {
+    param (
+        [Parameter(Mandatory=$true)]$WindowsOSObjAutomaticServices,
+        [Parameter(Mandatory=$true)]$CleanedServicesProperties
+    )
+
+    $FinalServices = @{}
+    Write-Host $CleanedServicesProperties["Windows Event Log"]
+    ForEach ($Service in $WindowsOSObjAutomaticServices) {
+        #Write-Host $Service.ToString()
+        If ($CleanedServicesProperties[$Service.ToString()]) {
+            Write-Host "MATCH: " $Service.ToString() $CleanedServicesProperties[$Service.ToString()]
+        }
+    }
+
+    Write-Host $FinalServices
+}
+
+
 # Get specific Windows OS object's parent VM.
 # Commit new services to VM object
 
@@ -151,3 +174,4 @@ $WindowsOSObjAutomaticServices = Get-WindowsOSObjAutomaticServices -RemoteCollec
 $WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -Headers $Headers
 $ExactServicesProperties = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
 $CleanedServicesProperties = Find-BlackListedServices -ExactServices $ExactServicesProperties
+$FinalServices = Search-ForServiceName -WindowsOSObjAutomaticServices $WindowsOSObjAutomaticServices -CleanedServicesProperties $CleanedServicesProperties
