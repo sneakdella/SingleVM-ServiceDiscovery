@@ -48,4 +48,45 @@ function Get-vROpsAccessToken {
     $global:Headers.Add("Authorization", "vRealizeOpsToken " +$global:accesstoken.token)
 }
 
-Get-vROpsAccessToken -RemoteCollector $RemoteCollector -Credential $Credential -AuthSource $AuthSource -FunctionDebug $true
+
+# Get specific Windows OS object's service objects properties
+
+function Get-WindowsOSObjProperties {
+    param (
+        [Parameter(Mandatory=$true)]$RemoteCollector,
+        [Parameter(Mandatory=$true)]$Headers,
+        [Parameter(Mandatory=$false)]$FunctionDebug=$false
+    )
+
+    $WindowsOSObjectProperties = Invoke-RestMethod "https://$RemoteCollector/suite-api/api/resources/961ab153-7fd6-4a34-9d9a-b317014f5686/properties?_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
+
+    return $WindowsOSObjectProperties
+}
+
+# Find anything starting with "Tags:services|"
+# Grab the Service Display Name between the first | and second |
+# Output dictionary with value
+
+function Get-ExactServiceNameByTag {
+    param (
+        [Parameter(Mandatory=$true)]$WindowsOSObjectProperties
+    )
+
+    $hashtable = @{}
+    ForEach ($property in $WindowsOSObjectProperties.property) {
+        If ($property.name.StartsWith("Tags:services|")) {
+            $ServiceDisplayName = $property.name.split("|")[1]
+            $hashtable.add($ServiceDisplayName, $property.value)
+        }
+    }
+
+    return $hashtable
+}
+
+# Get specific Windows OS object's parent VM.
+# Commit new services to VM object
+
+Get-vROpsAccessToken -RemoteCollector $RemoteCollector -Credential $Credential -AuthSource $AuthSource #-FunctionDebug $true
+$WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -Headers $Headers
+$ExactServices = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
+
