@@ -32,7 +32,7 @@ Unfortunately, it is not a simple pull from the vROps 8.10 API to get the Displa
 ### A Note On "Services" Objects
 There are two types of Services objects in vROps 8/VMware Aria Operations SaaS. They both use different adapters.
 
-- VMWare vRealize Application Management Pack (Telegraf)
+- VMWare vRealize Application Management Pack (Telegraf) ---- This is the Service object(s) the script is creating
 - Service Discovery via VMware Tools (Native SDMP Discovery)
 
 ### Steps This Script Performs
