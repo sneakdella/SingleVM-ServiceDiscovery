@@ -48,9 +48,29 @@ function Get-vROpsAccessToken {
     $global:Headers.Add("Authorization", "vRealizeOpsToken " +$global:accesstoken.token)
 }
 
+function Get-WindowsOSObjServicesStats {
+    param (
+        [Parameter(Mandatory=$true)]$RemoteCollector,
+        [Parameter(Mandatory=$true)]$Headers,
+        [Parameter(Mandatory=$false)]$FunctionDebug=$false
+    )
+
+    $WindowsOSObjectServicesStats = Invoke-RestMethod "https://$RemoteCollector/suite-api/api/resources/961ab153-7fd6-4a34-9d9a-b317014f5686/stats/latest?currentOnly=false&_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
+
+    $StatList = $WindowsOSObjectServicesStats.values."stat-list"."stat"
+    
+    $FinalOutput = @{}
+
+    ForEach ($stat in $StatList) {
+        If (($stat.statKey -match "startup.mode") -and ($stat.data -eq "3")) {
+            Write-Host $stat.statKey $stat.data
+        }
+    }
+
+    return $WindowsOSObjectServicesStats
+}
 
 # Get specific Windows OS object's service objects properties
-
 function Get-WindowsOSObjProperties {
     param (
         [Parameter(Mandatory=$true)]$RemoteCollector,
@@ -122,6 +142,8 @@ function Find-BlackListedServices {
 # Commit new services to VM object
 
 Get-vROpsAccessToken -RemoteCollector $RemoteCollector -Credential $Credential -AuthSource $AuthSource #-FunctionDebug $true
-$WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -Headers $Headers
-$ExactServices = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
-$FinalServices = Find-BlackListedServices -ExactServices $ExactServices
+$WindowsOSObjectServiceStats = Get-WindowsOSObjServicesStats -RemoteCollector $RemoteCollector -Headers $Headers
+
+#$WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -Headers $Headers
+#$ExactServices = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
+#$FinalServices = Find-BlackListedServices -ExactServices $ExactServices
