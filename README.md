@@ -46,5 +46,5 @@ There are two types of Services objects in vROps 8/VMware Aria Operations SaaS. 
 /////// BELOW IS STILL IN DEVELOPMENT ///////
 
 - Once it has the service display names and associated service name(s), the Parent Virtual Machine object is then queried for.
-- The script will check the Parent Virtual Machine object if any of the services are already existing/collecting on the Virtual Machine. If they exist on the Virtual Machine object already, they will be removed from the hash table. If they don't exist, they will stay in the hashtable. The hashtable is only intended to have objects that are not currently monitored.
-- Once the final list of Windows Automatic Services are confirmed. It will then commit against the parent Virtual Machine object to command a service activation for the Windows Services.
+- The script will check the Parent Virtual Machine object if any of the services are already existing/collecting on the Virtual Machine. If they exist on the Virtual Machine object already, they will be removed from the hashtable. If they don't exist, they will stay in the hashtable. The hashtable is only intended to have objects that are not currently monitored.
+- Once the final list of Windows Automatic Services are confirmed. It will then commit against the parent Virtual Machine object to command a service activation for the Windows Services listed in the hashtable.
