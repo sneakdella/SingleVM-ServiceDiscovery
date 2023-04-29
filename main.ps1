@@ -7,7 +7,7 @@ $global:accesstoken = ''
 
 $RemoteCollector = "10.0.0.27"
 $Credential = Get-Credential -Message "Please provide your vROps Credentials"
-$AuthSource = Read-Host "Enter the auth source of the account. [Enter LOCAL if it's just local]: "
+$AuthSource = Read-Host "Enter the auth source of the account. [Leave blank if LOCAL]"
 
 if ($AuthSource -eq "") {
     $AuthSource = "LOCAL"
