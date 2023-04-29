@@ -99,16 +99,13 @@ function Find-BlackListedServices {
     $FinalServices = @{}
 
     ForEach ($Service in $ExactServices.GetEnumerator()) {
-        #Write-Host $Service
-        #Write-Host $Service.key
-
-        If ($BlackListedServices.Contains($Service.Key)) {
-            Write-Host "SKIPPED: " $Service
-        } else {
-            #Write-Host "APPROVED: " $Service
-            #$FinalServices.Add($Service.key, $Serivce.value)
+        ForEach ($BLService in $BlackListedServices) {
+            If ($Service.key -match $BLService) {
+                Write-Host "SKIPPED: " $Service "|||||" $BLService
+                break
+            }
         }
-
+        $FinalServices.Add($Service.key, $Serivce.value)
     }
 }
 # Get specific Windows OS object's parent VM.
@@ -117,5 +114,7 @@ function Find-BlackListedServices {
 Get-vROpsAccessToken -RemoteCollector $RemoteCollector -Credential $Credential -AuthSource $AuthSource #-FunctionDebug $true
 $WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -Headers $Headers
 $ExactServices = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
-Find-BlackListedServices -ExactServices $ExactServices
+$CleanedServices = Find-BlackListedServices -ExactServices $ExactServices
+
+Write-Host $CleanedServices
 
