@@ -197,7 +197,7 @@ function Get-WinObjChildServices {
         [Parameter(Mandatory=$false)]$FunctionDebug=$false
     )
 
-    $ChildServiceObjects = Invoke-RestMethod "https://10.0.0.27/suite-api/api/resources/961ab153-7fd6-4a34-9d9a-b317014f5686/relationships/CHILD?page=0&pageSize=-1&_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
+    $ChildServiceObjects = Invoke-RestMethod "https://$RemoteCollector/suite-api/api/resources/961ab153-7fd6-4a34-9d9a-b317014f5686/relationships/CHILD?page=0&pageSize=-1&_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
 
     $ServicesMonitored = @{}
 
