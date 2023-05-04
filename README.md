@@ -42,9 +42,8 @@ There are two types of Services objects in vROps 8/VMware Aria Operations SaaS. 
 - Pull it's Windows Services via the Windows OS object's Metrics > Services (To get the service's startup mode by display name) and return only the Windows Services set to automatic (value is 2) in the form of an ArrayList
 - Pull it's Windows Services via the Windows OS object's Properties > Tags > Services (this is to get the Service Name), and remove the BlackListed services. It will return this as a Hastable
 - The script will then take the ArrayList of Automatic Windows Services to match the Display Name with the Service Name and return a final hashtable of all automatic services with the correct information needed. "Display Name" and "Service Name"
+- Once it has the service display names and associated service name(s), the Parent Virtual Machine object is then queried for.
 
 /////// BELOW IS STILL IN DEVELOPMENT ///////
-
-- Once it has the service display names and associated service name(s), the Parent Virtual Machine object is then queried for.
-- The script will check the Parent Virtual Machine object if any of the services are already existing/collecting on the Virtual Machine. If they exist on the Virtual Machine object already, they will be removed from the hashtable. If they don't exist, they will stay in the hashtable. The hashtable is only intended to have objects that are not currently monitored.
-- Once the final list of Windows Automatic Services are confirmed. It will then commit against the parent Virtual Machine object to command a service activation for the Windows Services listed in the hashtable.
+- The script will check the Parent Virtual Machine object if any of the services are already existing/collecting on the Virtual Machine. If they exist on the Virtual Machine object already, they will be removed from the hashtable. If they don't exist, they will stay in the hashtable. The hashtable is only intended to have objects that are not currently monitored. (STARTED)
+- Once the final list of Windows Automatic Services are confirmed. It will then commit against the parent Virtual Machine object to command a service activation for the Windows Services listed in the hashtable. (NOT-STARTED)

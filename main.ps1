@@ -156,9 +156,9 @@ function Search-ForServiceName {
     $FinalServices = @{}
 
     ForEach ($Service in $WindowsOSObjAutomaticServices) {
-        #Write-Host $Service.ToString()
+        #DEBUG Write-Host $Service.ToString()
         If ($CleanedServicesProperties[$Service.ToString()]) {
-            Write-Host "MATCH: " $Service.ToString() $CleanedServicesProperties[$Service.ToString()]
+            #DEBUG Write-Host "MATCH: " $Service.ToString() $CleanedServicesProperties[$Service.ToString()]
             $FinalServices.Add($Service.ToString(), $CleanedServicesProperties[$Service.ToString()])
         }
     }
@@ -166,18 +166,68 @@ function Search-ForServiceName {
 }
 
 # Get specific Windows OS object's parent VM.
-<#
 function Get-ParentVirtualMachine {
-# https://10.0.0.27/suite-api/api/resources/961ab153-7fd6-4a34-9d9a-b317014f5686/relationships/PARENT?page=0&pageSize=1000&_no_links=true
+    
+    param (
+        [Parameter(Mandatory=$true)]$RemoteCollector,
+        [Parameter(Mandatory=$true)]$Headers,
+        [Parameter(Mandatory=$false)]$FunctionDebug=$false
+    )
+
+    $Relationships = Invoke-RestMethod "https://$RemoteCollector/suite-api/api/resources/961ab153-7fd6-4a34-9d9a-b317014f5686/relationships/PARENT?page=0&pageSize=-1&_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
+    $ParentVirtualMachineUUID = ""
+    ForEach ($resource in $Relationships.resourceList) {
+        If ($resource.resourceKey.resourceKindKey -eq "VirtualMachine") {
+            #DEBUG Write-Host $resource.resourceKey.name
+            #DEBUG Write-Host $resource.identifier
+            $ParentVirtualMachineUUID = ($resource.identifier).ToString()
+        }
+    }
+    return $ParentVirtualMachineUUID
 }
-#>
+
 
 # Check for services that are already added? I.E. Don't try to add a additional serviceavailibility 
-<#
-function Get-VMObjTelegrafCustomServices {
 
+function Get-WinObjChildServices {
+
+    param (
+        [Parameter(Mandatory=$true)]$RemoteCollector,
+        [Parameter(Mandatory=$true)]$Headers,
+        [Parameter(Mandatory=$false)]$FunctionDebug=$false
+    )
+
+    $ChildServiceObjects = Invoke-RestMethod "https://10.0.0.27/suite-api/api/resources/961ab153-7fd6-4a34-9d9a-b317014f5686/relationships/CHILD?page=0&pageSize=-1&_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
+
+    $ServicesMonitored = @{}
+
+    ForEach ($resource in $ChildServiceObjects.resourceList) {
+        $ServiceDisplayName = ""
+        $ServiceTrueName = ""
+        If ($resource.resourceKey.resourceKindKey -eq "serviceavailability") {
+            # Service Display Name + Windows OS on SERVERNAME
+            #DEBUG Write-Host $resource.resourceKey.name
+            $ServiceDisplayName = $resource.resourceKey.name
+
+            ForEach ($identifier in $resource.resourceKey.resourceIdentifiers) {
+                If ($identifier.identifierType.name -eq "FILTER_VALUE") {
+                    # The actual service NAME (not display name)
+                    #DEBUG Write-Host $identifier.value
+                    $ServiceTrueName = $identifier.value
+                    break
+                }
+            }
+        }
+
+        # Add to hash table, key is Display Name, value is Service Name.
+        $ServicesMonitored.Add($ServiceDisplayName,$ServiceTrueName)
+    }
+
+    return $ServicesMonitored
 }
 
+
+<#
 function Compare-ServicesAgain {
     
 }
@@ -197,3 +247,9 @@ $WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $Remote
 $ExactServicesProperties = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
 $CleanedServicesProperties = Find-BlackListedServices -ExactServices $ExactServicesProperties
 $FinalServices = Search-ForServiceName -WindowsOSObjAutomaticServices $WindowsOSObjAutomaticServices -CleanedServicesProperties $CleanedServicesProperties
+$ParentVirtualMachineUUID = Get-ParentVirtualMachine -RemoteCollector $RemoteCollector -Headers $Headers
+$ServicesMonitored = Get-WinObjChildServices -RemoteCollector $RemoteCollector -Headers $Headers
+
+Write-Host $ServicesMonitored
+Write-Host "############### SCRIPT STILL IN DEVELOPMENT ###############"
+
