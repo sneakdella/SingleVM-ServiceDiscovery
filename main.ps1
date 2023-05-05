@@ -66,7 +66,7 @@ function Get-WindowsOSObjAutomaticServices {
     #/(?<=services:).*(?=\|)/g
 
     ForEach ($stat in $StatList) {
-        If (($stat.statKey -match "startup.mode") -and ($stat.data -eq "3")) {
+        If (($stat.statKey -match "startup.mode") -and ($stat.data -eq "2")) {
             $ServiceName = (Select-String -InputObject $stat.statKey -Pattern '(?<=services:).*(?=\|)').Matches[0]
             [void]$FinalOutput.Add($ServiceName) # void or else it will add a bunch of numbers when printing
         }
@@ -146,26 +146,27 @@ function Find-BlackListedServices {
 
 
 # Search for Service Display Name's "servicename" i.e. Windows Event Log would be "Eventlog"
-# Output will be a final hash table of the automatic services with their associated servicename
+# Output will be a final hash table of the automatic services with their associated servicename from the Windows OS object metrics/properties
+# These will be later compared in the final Compare-ServicesFinal
 function Search-ForServiceName {
     param (
         [Parameter(Mandatory=$true)]$WindowsOSObjAutomaticServices,
         [Parameter(Mandatory=$true)]$CleanedServicesProperties
     )
 
-    $FinalServices = @{}
+    $FinalFromWinOSObj = @{}
 
     ForEach ($Service in $WindowsOSObjAutomaticServices) {
         #DEBUG Write-Host $Service.ToString()
         If ($CleanedServicesProperties[$Service.ToString()]) {
             #DEBUG Write-Host "MATCH: " $Service.ToString() $CleanedServicesProperties[$Service.ToString()]
-            $FinalServices.Add($Service.ToString(), $CleanedServicesProperties[$Service.ToString()])
+            $FinalFromWinOSObj.Add($Service.ToString(), $CleanedServicesProperties[$Service.ToString()])
         }
     }
-    return $FinalServices
+    return $FinalFromWinOSObj
 }
 
-# Get specific Windows OS object's parent VM.
+# Get specific Windows OS object's parent VM. Returns UID of Parent Virtual Machine Object
 function Get-ParentVirtualMachine {
     
     param (
@@ -187,8 +188,7 @@ function Get-ParentVirtualMachine {
 }
 
 
-# Check for services that are already added? I.E. Don't try to add a additional serviceavailibility 
-
+# Grab Windows OS object child services in preparation for final comparison. This will be fed into Compare-ServicesFinal
 function Get-WinObjChildServices {
 
     param (
@@ -220,6 +220,8 @@ function Get-WinObjChildServices {
         }
 
         # Add to hash table, key is Display Name, value is Service Name.
+        $IndexOfLastOn = $ServiceDisplayName.LastIndexOf(" on")
+        $ServiceDisplayName = $ServiceDisplayName.Substring(0,$IndexOfLastOn)
         $ServicesMonitored.Add($ServiceDisplayName,$ServiceTrueName)
     }
 
@@ -227,11 +229,37 @@ function Get-WinObjChildServices {
 }
 
 
-<#
-function Compare-ServicesAgain {
-    
+# Check for services that are already added? I.E. Don't try to add a additional serviceavailibility that is already monitoring Windows Event Log / "Eventlog"
+# Outputs final list of services to commit to the Virtual Machine object.
+function Compare-ServicesFinal {
+    param (
+        [Parameter(Mandatory=$true)]$ServicesMonitored,
+        [Parameter(Mandatory=$true)]$FinalFromWinOSObj
+    )
+
+    $ServicesToAdd = @{}
+
+    ForEach ($AutomaticService in $FinalFromWinOSObj.GetEnumerator()) {
+
+        $SkipService = $False
+
+        ForEach ($MonitoredService in $ServicesMonitored.GetEnumerator()) {
+            If ($AutomaticService.key -eq $MonitoredService.key) {
+                $SkipService = $True
+                #DEBUG Write-Host "SKIPPED: " $AutomaticService.key $AutomaticService.value "BECAUSE: " $MonitoredService.key $MonitoredService.value
+                break
+            }
+        }
+
+        If ($SkipService -eq $False) {
+            #DEBUG Write-Host "Adding: " $AutomaticService.key "|" $AutomaticService.value
+            $ServicesToAdd.Add($AutomaticService.key, $AutomaticService.value)
+        }
+    }
+
+    return $ServicesToAdd
 }
-#>
+
 
 # Finally, commit new automatic services to VM object that already don't exist
 
@@ -246,10 +274,13 @@ $WindowsOSObjAutomaticServices = Get-WindowsOSObjAutomaticServices -RemoteCollec
 $WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -Headers $Headers
 $ExactServicesProperties = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
 $CleanedServicesProperties = Find-BlackListedServices -ExactServices $ExactServicesProperties
-$FinalServices = Search-ForServiceName -WindowsOSObjAutomaticServices $WindowsOSObjAutomaticServices -CleanedServicesProperties $CleanedServicesProperties
+$FinalFromWinOSObj = Search-ForServiceName -WindowsOSObjAutomaticServices $WindowsOSObjAutomaticServices -CleanedServicesProperties $CleanedServicesProperties
 $ParentVirtualMachineUUID = Get-ParentVirtualMachine -RemoteCollector $RemoteCollector -Headers $Headers
 $ServicesMonitored = Get-WinObjChildServices -RemoteCollector $RemoteCollector -Headers $Headers
+$ServicesToAdd = Compare-ServicesFinal -ServicesMonitored $ServicesMonitored -FinalFromWinOSObj $FinalFromWinOSObj
 
-Write-Host $ServicesMonitored
+
 Write-Host "############### SCRIPT STILL IN DEVELOPMENT ###############"
+Write-Host "`$ServicesToAdd:"
+Write-Host $ServicesToAdd
 

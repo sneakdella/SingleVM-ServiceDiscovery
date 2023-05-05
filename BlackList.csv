@@ -1,4 +1,6 @@
 ServiceName
+Application Remote Collector Salt Minion
+Application Remote Collector Minion
 CaptureService
 Connected Devices Platform User Service
 Clipboard User Service
@@ -9,6 +11,7 @@ DevicesFlow
 Google Update Service
 Google Chrome Elevation Service
 LxssManagerUser
+Microsoft Edge Update Service
 Udk User Service
 User Data Access
 User Data Storage

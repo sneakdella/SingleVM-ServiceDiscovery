@@ -41,9 +41,16 @@ There are two types of Services objects in vROps 8/VMware Aria Operations SaaS. 
 - Look up a single WindowsOS object in vROps 8.10
 - Pull it's Windows Services via the Windows OS object's Metrics > Services (To get the service's startup mode by display name) and return only the Windows Services set to automatic (value is 2) in the form of an ArrayList
 - Pull it's Windows Services via the Windows OS object's Properties > Tags > Services (this is to get the Service Name), and remove the BlackListed services. It will return this as a Hastable
-- The script will then take the ArrayList of Automatic Windows Services to match the Display Name with the Service Name and return a final hashtable of all automatic services with the correct information needed. "Display Name" and "Service Name"
-- Once it has the service display names and associated service name(s), the Parent Virtual Machine object is then queried for.
+- The script will then take the ArrayList of Automatic Windows Services to match the Display Name with the Service Name and return a hashtable of all automatic services with the correct information needed ("Display Name" and "Service Name"). This is all then stored in the variable **$FinalFromWinOSObj**
+- Once it has the service display names and associated service name(s), the Parent Virtual Machine object is then queried for. The UID is needed to commit the new Windows Services to be monitored if any are found.
+- The script will then obtain a list of all the CHILD objects of the Windows OS object that are of the serviceavailability custom monitoring type. Here it will retireve the name of the service ("Windows Event Log on SERVERA") plus the "FILTER_VALUE" which would be the service's name (continuing the example, "EventLog"). It will dump these two values per object into a hashtable, but trim off the "on SERVERA" for the display name. Service Display Name is the key, Service Name "EventLog" would again be the value. This hashtable is stored in the variable named **$ServicesMonitored**
+- The $FinalFromWinOSObj and $ServicesMonitored hashtables are then compared to ensure the script isn't trying to commit a Windows Service that is already monitored by VMware Aria Operations. This will return a hashtable stored in the variable **$ServicesToAdd**. (Gee, finally, that took long enough)
 
 /////// BELOW IS STILL IN DEVELOPMENT ///////
-- The script will check the Parent Virtual Machine object if any of the services are already existing/collecting on the Virtual Machine. If they exist on the Virtual Machine object already, they will be removed from the hashtable. If they don't exist, they will stay in the hashtable. The hashtable is only intended to have objects that are not currently monitored. (STARTED)
+
 - Once the final list of Windows Automatic Services are confirmed. It will then commit against the parent Virtual Machine object to command a service activation for the Windows Services listed in the hashtable. (NOT-STARTED)
+
+/////// TO DO ///////
+- Turn entire script into Powershell Module (PSM1)
+- Add a "What-If" option to show what services would be added without committing anything
+- Add functional debug parameters to each function (considering not doing this but whatever)
