@@ -52,3 +52,7 @@ There are two types of Services objects in vROps 8/VMware Aria Operations SaaS. 
 - Turn entire script into Powershell Module (PSM1)
 - Add a "What-If" option to show what services would be added without committing anything
 - Add functional debug parameters to each function (considering not doing this but whatever)
+
+### Final Notes
+
+- Missing a few commit history entries since I attempted to rebase my previous commits with the correct author name (me). I believe this is fixed now.
