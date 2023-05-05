@@ -262,12 +262,35 @@ function Compare-ServicesFinal {
 
 
 # Finally, commit new automatic services to VM object that already don't exist
+function Invoke-NewServices {
+    param (
+        [Parameter(Mandatory=$true)]$RemoteCollector,
+        [Parameter(Mandatory=$true)]$AutomaticServices,
+        [Parameter(Mandatory=$true)]$CurrentVM,
+        [Parameter(Mandatory=$true)]$Headers,
+        [Parameter(Mandatory=$false)]$FunctionDebug=$false
+    )
 
-<#
-function Commit-NewServicesToVMObject {
+    #$FirstAutoService = $AutomaticServices[0]
+    #$jsonBody = "{ `"services`": [ { `"serviceName`": `"serviceavailability`", `"configurations`": [ {`"configName`": `"$($FirstAutoService.DisplayName)`",`"isActivated`": true,`"parameters`":[{`"key`":`"FILTER_VALUE`",`"value`":`"$($FirstAutoService.Name)`"}]}]}]}"
+    
+    
+    ForEach ($service in $AutomaticServices.GetEnumerator()){
 
+        $jsonBody = "{ `"services`": [ { `"serviceName`": `"serviceavailability`", `"configurations`": [ {`"configName`": `"$($service.key)`",`"isActivated`": true,`"parameters`":[{`"key`":`"FILTER_VALUE`",`"value`":`"$($service.value)`"}]}]}]}"
+
+        If ($FunctionDebug -eq $true){
+            Write-Host "function Invoke-NewServices DEBUG: `$jsonBody contents: "$jsonBody
+        }
+
+        try {
+            Invoke-RestMethod "https://$RemoteCollector/suite-api/api/applications/agents/$CurrentVM/services?_no_links=true" -Method 'POST' -Headers $Headers -Body $jsonBody -SkipCertificateCheck
+        }
+        catch {
+            Write-Host "function Invoke-NewServices ERROR: Service: $($service.key) with exec name $($service.value) either exists already or Invoke-RestMethod failed due to JSON formatting."
+        }
+    }
 }
-#>
 
 Get-vROpsAccessToken -RemoteCollector $RemoteCollector -Credential $Credential -AuthSource $AuthSource #-FunctionDebug $true
 $WindowsOSObjAutomaticServices = Get-WindowsOSObjAutomaticServices -RemoteCollector $RemoteCollector -Headers $Headers
@@ -277,10 +300,5 @@ $CleanedServicesProperties = Find-BlackListedServices -ExactServices $ExactServi
 $FinalFromWinOSObj = Search-ForServiceName -WindowsOSObjAutomaticServices $WindowsOSObjAutomaticServices -CleanedServicesProperties $CleanedServicesProperties
 $ParentVirtualMachineUUID = Get-ParentVirtualMachine -RemoteCollector $RemoteCollector -Headers $Headers
 $ServicesMonitored = Get-WinObjChildServices -RemoteCollector $RemoteCollector -Headers $Headers
-$ServicesToAdd = Compare-ServicesFinal -ServicesMonitored $ServicesMonitored -FinalFromWinOSObj $FinalFromWinOSObj
-
-
-Write-Host "############### SCRIPT STILL IN DEVELOPMENT ###############"
-Write-Host "`$ServicesToAdd:"
-Write-Host $ServicesToAdd
-
+$ServicesToAdd = Compare-ServicesFinal -ServicesMonitored $ServicesMonitored -FinalFromWinOSObj $FinalFromWinOSObj 
+Invoke-NewServices -RemoteCollector $RemoteCollector -AutomaticServices $ServicesToAdd -Headers $Headers -CurrentVM $ParentVirtualMachineUUID

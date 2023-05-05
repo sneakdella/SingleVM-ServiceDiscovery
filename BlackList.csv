@@ -1,17 +1,26 @@
 ServiceName
-Application Remote Collector Salt Minion
 Application Remote Collector Minion
+Application Remote Collector Salt Minion
+Background Tasks Infrastructure Service
+Base Filtering Engine
 CaptureService
-Connected Devices Platform User Service
 Clipboard User Service
+Connected Devices Platform User Service
 ConsentUX User Service
 Contact Data
+CoreMessaging
+DCOM Server Process Launcher
 DevicePicker
 DevicesFlow
-Google Update Service
+DNS Client
 Google Chrome Elevation Service
+Google Update Service
 LxssManagerUser
+Microsoft Defender Antivirus Service
 Microsoft Edge Update Service
+Remote Procedure Call
+RPC Endpoint Mapper
+System Events Broker
 Udk User Service
 User Data Access
 User Data Storage
