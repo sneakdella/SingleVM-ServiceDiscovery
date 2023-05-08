@@ -8,6 +8,8 @@ $global:accesstoken = ''
 $RemoteCollector = "10.0.0.27"
 $Credential = Get-Credential -Message "Please provide your vROps Credentials"
 $AuthSource = Read-Host "Enter the auth source of the account. [Leave blank if LOCAL]"
+$WindowsObjectUUID = "9cc8175e-5bb0-4c5a-8671-e194412a9679"
+
 
 if ($AuthSource -eq "") {
     $AuthSource = "LOCAL"
@@ -52,11 +54,12 @@ function Get-vROpsAccessToken {
 function Get-WindowsOSObjAutomaticServices {
     param (
         [Parameter(Mandatory=$true)]$RemoteCollector,
+        [Parameter(Mandatory=$true)]$WindowsObjectUUID,
         [Parameter(Mandatory=$true)]$Headers,
         [Parameter(Mandatory=$false)]$FunctionDebug=$false
     )
 
-    $WindowsOSObjectServicesStats = Invoke-RestMethod "https://$RemoteCollector/suite-api/api/resources/961ab153-7fd6-4a34-9d9a-b317014f5686/stats/latest?currentOnly=false&_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
+    $WindowsOSObjectServicesStats = Invoke-RestMethod "https://$RemoteCollector/suite-api/api/resources/$WindowsObjectUUID/stats/latest?currentOnly=false&_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
 
     $StatList = $WindowsOSObjectServicesStats.values."stat-list"."stat"
     
@@ -79,11 +82,12 @@ function Get-WindowsOSObjAutomaticServices {
 function Get-WindowsOSObjProperties {
     param (
         [Parameter(Mandatory=$true)]$RemoteCollector,
+        [Parameter(Mandatory=$true)]$WindowsObjectUUID,
         [Parameter(Mandatory=$true)]$Headers,
         [Parameter(Mandatory=$false)]$FunctionDebug=$false
     )
 
-    $WindowsOSObjectProperties = Invoke-RestMethod "https://$RemoteCollector/suite-api/api/resources/961ab153-7fd6-4a34-9d9a-b317014f5686/properties?_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
+    $WindowsOSObjectProperties = Invoke-RestMethod "https://$RemoteCollector/suite-api/api/resources/$WindowsObjectUUID/properties?_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
 
     return $WindowsOSObjectProperties
 }
@@ -171,11 +175,12 @@ function Get-ParentVirtualMachine {
     
     param (
         [Parameter(Mandatory=$true)]$RemoteCollector,
+        [Parameter(Mandatory=$true)]$WindowsObjectUUID,
         [Parameter(Mandatory=$true)]$Headers,
         [Parameter(Mandatory=$false)]$FunctionDebug=$false
     )
 
-    $Relationships = Invoke-RestMethod "https://$RemoteCollector/suite-api/api/resources/961ab153-7fd6-4a34-9d9a-b317014f5686/relationships/PARENT?page=0&pageSize=-1&_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
+    $Relationships = Invoke-RestMethod "https://$RemoteCollector/suite-api/api/resources/$WindowsObjectUUID/relationships/PARENT?page=0&pageSize=-1&_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
     $ParentVirtualMachineUUID = ""
     ForEach ($resource in $Relationships.resourceList) {
         If ($resource.resourceKey.resourceKindKey -eq "VirtualMachine") {
@@ -193,11 +198,12 @@ function Get-WinObjChildServices {
 
     param (
         [Parameter(Mandatory=$true)]$RemoteCollector,
+        [Parameter(Mandatory=$true)]$WindowsObjectUUID,
         [Parameter(Mandatory=$true)]$Headers,
         [Parameter(Mandatory=$false)]$FunctionDebug=$false
     )
 
-    $ChildServiceObjects = Invoke-RestMethod "https://$RemoteCollector/suite-api/api/resources/961ab153-7fd6-4a34-9d9a-b317014f5686/relationships/CHILD?page=0&pageSize=-1&_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
+    $ChildServiceObjects = Invoke-RestMethod "https://$RemoteCollector/suite-api/api/resources/$WindowsObjectUUID/relationships/CHILD?page=0&pageSize=-1&_no_links=true" -Method 'GET' -Headers $Headers -SkipCertificateCheck
 
     $ServicesMonitored = @{}
 
@@ -271,10 +277,15 @@ function Invoke-NewServices {
         [Parameter(Mandatory=$false)]$FunctionDebug=$false
     )
 
+    # If no services to add just exit.
+    If ($AutomaticServices.count -eq 0){
+        Write-Host "No services to add. Exiting."
+        return $null
+    }
+
     #$FirstAutoService = $AutomaticServices[0]
     #$jsonBody = "{ `"services`": [ { `"serviceName`": `"serviceavailability`", `"configurations`": [ {`"configName`": `"$($FirstAutoService.DisplayName)`",`"isActivated`": true,`"parameters`":[{`"key`":`"FILTER_VALUE`",`"value`":`"$($FirstAutoService.Name)`"}]}]}]}"
-    
-    
+
     ForEach ($service in $AutomaticServices.GetEnumerator()){
 
         $jsonBody = "{ `"services`": [ { `"serviceName`": `"serviceavailability`", `"configurations`": [ {`"configName`": `"$($service.key)`",`"isActivated`": true,`"parameters`":[{`"key`":`"FILTER_VALUE`",`"value`":`"$($service.value)`"}]}]}]}"
@@ -293,12 +304,12 @@ function Invoke-NewServices {
 }
 
 Get-vROpsAccessToken -RemoteCollector $RemoteCollector -Credential $Credential -AuthSource $AuthSource #-FunctionDebug $true
-$WindowsOSObjAutomaticServices = Get-WindowsOSObjAutomaticServices -RemoteCollector $RemoteCollector -Headers $Headers
-$WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -Headers $Headers
+$WindowsOSObjAutomaticServices = Get-WindowsOSObjAutomaticServices -RemoteCollector $RemoteCollector -WindowsObjectUUID $WindowsObjectUUID -Headers $Headers
+$WindowsOSObjectProperties = Get-WindowsOSObjProperties -RemoteCollector $RemoteCollector -WindowsObjectUUID $WindowsObjectUUID -Headers $Headers
 $ExactServicesProperties = Get-ExactServiceNameByTag -WindowsOSObjectProperties $WindowsOSObjectProperties
 $CleanedServicesProperties = Find-BlackListedServices -ExactServices $ExactServicesProperties
 $FinalFromWinOSObj = Search-ForServiceName -WindowsOSObjAutomaticServices $WindowsOSObjAutomaticServices -CleanedServicesProperties $CleanedServicesProperties
-$ParentVirtualMachineUUID = Get-ParentVirtualMachine -RemoteCollector $RemoteCollector -Headers $Headers
-$ServicesMonitored = Get-WinObjChildServices -RemoteCollector $RemoteCollector -Headers $Headers
+$ParentVirtualMachineUUID = Get-ParentVirtualMachine -RemoteCollector $RemoteCollector -WindowsObjectUUID $WindowsObjectUUID -Headers $Headers
+$ServicesMonitored = Get-WinObjChildServices -RemoteCollector $RemoteCollector -WindowsObjectUUID $WindowsObjectUUID -Headers $Headers
 $ServicesToAdd = Compare-ServicesFinal -ServicesMonitored $ServicesMonitored -FinalFromWinOSObj $FinalFromWinOSObj 
 Invoke-NewServices -RemoteCollector $RemoteCollector -AutomaticServices $ServicesToAdd -Headers $Headers -CurrentVM $ParentVirtualMachineUUID
