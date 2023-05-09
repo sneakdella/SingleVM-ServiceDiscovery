@@ -46,10 +46,10 @@ There are two types of Services objects in vROps 8/VMware Aria Operations SaaS. 
 - The script will then obtain a list of all the CHILD objects of the Windows OS object that are of the serviceavailability custom monitoring type. Here it will retireve the name of the service ("Windows Event Log on SERVERA") plus the "FILTER_VALUE" which would be the service's name (continuing the example, "EventLog"). It will dump these two values per object into a hashtable, but trim off the "on SERVERA" for the display name. Service Display Name is the key, Service Name "EventLog" would again be the value. This hashtable is stored in the variable named **$ServicesMonitored**
 - The $FinalFromWinOSObj and $ServicesMonitored hashtables are then compared to ensure the script isn't trying to commit a Windows Service that is already monitored by VMware Aria Operations. This will return a hashtable stored in the variable **$ServicesToAdd**. (Gee, finally, that took long enough)
 - Once the final list of Windows Automatic Services are confirmed. It will then commit against the parent Virtual Machine object to command a service activation for the Windows Services listed in the hashtable.
-
-/////// TO DO ///////
 - Add global variable to have script accept a WindowsOS Object ID. Right now the script is on a singular UID from my dev environment.
 - Turn entire script into Powershell Module (PSM1)
+
+/////// TO DO ///////
 - Add a "What-If" option to show what services would be added without committing anything
 - Add functional debug parameters to each function (considering not doing this but whatever)
 
