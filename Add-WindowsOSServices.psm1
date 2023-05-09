@@ -3,7 +3,8 @@ function Add-WindowsOSServices {
     param (
         [Parameter(Mandatory=$true)]$WindowsObjectUUID,
         [Parameter(Mandatory=$false)]$AuthSource="",
-        [Parameter(Mandatory=$false)]$RemoteCollector="10.0.0.27"
+        [Parameter(Mandatory=$false)]$RemoteCollector="10.0.0.27",
+        [Parameter(Mandatory=$false)]$WhatIf=$false
     )
     ######## HEADER FOR API CALLS ##############
     $global:Headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
@@ -11,7 +12,7 @@ function Add-WindowsOSServices {
     $global:Headers.Add("Accept", "application/json")
     $global:accesstoken = ''
     ######## END HEADER FOR API CALLS ##########
-    
+
     $Credential = Get-Credential -Message "Please provide your vROps Credentials"
 
     if ($AuthSource -eq "") {
@@ -314,6 +315,14 @@ function Add-WindowsOSServices {
     $FinalFromWinOSObj = Search-ForServiceName -WindowsOSObjAutomaticServices $WindowsOSObjAutomaticServices -CleanedServicesProperties $CleanedServicesProperties
     $ParentVirtualMachineUUID = Get-ParentVirtualMachine -RemoteCollector $RemoteCollector -WindowsObjectUUID $WindowsObjectUUID -Headers $Headers
     $ServicesMonitored = Get-WinObjChildServices -RemoteCollector $RemoteCollector -WindowsObjectUUID $WindowsObjectUUID -Headers $Headers
-    $ServicesToAdd = Compare-ServicesFinal -ServicesMonitored $ServicesMonitored -FinalFromWinOSObj $FinalFromWinOSObj 
-    Invoke-NewServices -RemoteCollector $RemoteCollector -AutomaticServices $ServicesToAdd -Headers $Headers -CurrentVM $ParentVirtualMachineUUID
+    $ServicesToAdd = Compare-ServicesFinal -ServicesMonitored $ServicesMonitored -FinalFromWinOSObj $FinalFromWinOSObj
+
+    If ($WhatIf -eq $false) {
+        Invoke-NewServices -RemoteCollector $RemoteCollector -AutomaticServices $ServicesToAdd -Headers $Headers -CurrentVM $ParentVirtualMachineUUID
+    } elseif ($WhatIf -eq $true) {
+        ForEach ($Service in $ServicesToAdd.GetEnumerator()) {
+            Write-Host "`$WhatIf is set to TRUE, these are the services that would be committed"
+            Write-Host $Service.key $Service.value
+        }
+    }
 }
