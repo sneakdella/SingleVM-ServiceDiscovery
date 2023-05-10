@@ -1,5 +1,6 @@
 # SingleVM-ServiceDiscovery
-THIS SCRIPT IS STILL UNDER DEVELOPMENT AND INCOMPLETE
+THIS SCRIPT IS STILL UNDER DEVELOPMENT AND INCOMPLETE: Add-WindowsOSServices.psm1
+THIS OTHER SCRIPT IS TO GRAB ALL WINOS OBJECTS, IT IS ALSO INCOMPLETE: Get-VMsWithTelegrafInstalled.psm1
 ### Tl;dr
 - This script will auto-create VMware Application Management Pack Services Objects for Windows OS Virtual Machines that have the VMware vRealize Operations Integrated Telegraf Agent Installed (Managed Agent). 
 - There is a slight modification to the telegraf.emqtt.windows.conf file that is required first on the cloud proxy in which the managed telegraf agents are deployed from.
@@ -48,11 +49,12 @@ There are two types of Services objects in vROps 8/VMware Aria Operations SaaS. 
 - Once the final list of Windows Automatic Services are confirmed. It will then commit against the parent Virtual Machine object to command a service activation for the Windows Services listed in the hashtable.
 - Add global variable to have script accept a WindowsOS Object ID. Right now the script is on a singular UID from my dev environment.
 - Turn entire script into Powershell Module (PSM1)
+- Add a "What-If" option to show what services would be added without committing anything
 
 /////// TO DO ///////
-- Add a "What-If" option to show what services would be added without committing anything
 - Add functional debug parameters to each function (considering not doing this but whatever)
 
 ### Final Notes
 
 - Missing a few commit history entries since I attempted to rebase my previous commits with the correct author name (me). I believe this is fixed now.
+- Working on converting this to work with all Windows OS objects.... uhhhh not sure how to change the name of the repository yet. Ill figure it out.
