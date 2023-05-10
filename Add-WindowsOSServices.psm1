@@ -2,9 +2,10 @@ function Add-WindowsOSServices {
 
     param (
         [Parameter(Mandatory=$true)]$WindowsObjectUUID,
+        [Parameter(Mandatory=$true)][System.Management.Automation.PSCredential]$Credential,
         [Parameter(Mandatory=$false)]$AuthSource="",
         [Parameter(Mandatory=$false)]$RemoteCollector="10.0.0.27",
-        [Parameter(Mandatory=$false)]$WhatIf=$false
+        [Parameter(Mandatory=$false)]$Commit=$false
     )
     ######## HEADER FOR API CALLS ##############
     $global:Headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
@@ -13,7 +14,7 @@ function Add-WindowsOSServices {
     $global:accesstoken = ''
     ######## END HEADER FOR API CALLS ##########
 
-    $Credential = Get-Credential -Message "Please provide your vROps Credentials"
+    #$Credential = Get-Credential -Message "Please provide your vROps Credentials"
 
     if ($AuthSource -eq "") {
         $AuthSource = "LOCAL"
@@ -317,12 +318,17 @@ function Add-WindowsOSServices {
     $ServicesMonitored = Get-WinObjChildServices -RemoteCollector $RemoteCollector -WindowsObjectUUID $WindowsObjectUUID -Headers $Headers
     $ServicesToAdd = Compare-ServicesFinal -ServicesMonitored $ServicesMonitored -FinalFromWinOSObj $FinalFromWinOSObj
 
-    If ($WhatIf -eq $false) {
+    If ($Commit -eq $true) {
         Invoke-NewServices -RemoteCollector $RemoteCollector -AutomaticServices $ServicesToAdd -Headers $Headers -CurrentVM $ParentVirtualMachineUUID
-    } elseif ($WhatIf -eq $true) {
-        ForEach ($Service in $ServicesToAdd.GetEnumerator()) {
-            Write-Host "`$WhatIf is set to TRUE, these are the services that would be committed"
-            Write-Host $Service.key $Service.value
+    } elseif ($Commit -eq $false) {
+        If ($ServicesToAdd.Count -gt 0) {
+            Write-Host "`n`$Commit is set to TRUE, these are the services that would be committed to $WindowsObjectUUID"
+            ForEach ($Service in $ServicesToAdd.GetEnumerator()) {
+                Write-Host $Service.key $Service.value
+            }
+        } else {
+            Write-Host "No services to add for $WindowsObjectUUID`n"
         }
+        
     }
 }

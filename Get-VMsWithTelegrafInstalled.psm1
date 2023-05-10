@@ -79,7 +79,7 @@ function Get-VMsWithTelegrafInstalled {
         $WinOSObjectsHashTable = @{}
 
         ForEach ($WinObj in $AllWindowsOSObjects) {
-            Write-Host $WinObj.resourceKey.name $WinObj.identifier
+            # Write-Host $WinObj.resourceKey.name $WinObj.identifier
             $WinOSObjectsHashTable.Add($WinObj.resourceKey.name, $WinObj.identifier)
         }
 
@@ -90,5 +90,5 @@ function Get-VMsWithTelegrafInstalled {
     $AllWindowsOSObjects = Get-AllWindowsOSObjects -RemoteCollector $RemoteCollector -Headers $Headers
     $WinOSObjectHashTable = Optimize-ListOfWindowsOSObjects -AllWindowsOSObjects $AllWindowsOSObjects
 
-    Write-Host $WinOSObjectHashTable
+    return $WinOSObjectHashTable
 }
