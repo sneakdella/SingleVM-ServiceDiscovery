@@ -11,15 +11,12 @@ function Get-VMsWithTelegrafInstalled {
     $global:Headers.Add("Accept", "application/json")
     $global:accesstoken = ''
     ######## END HEADER FOR API CALLS ##########
-    <# 
-    $RemoteCollector = "10.0.0.27"
-    $Credential = Get-Credential -Message "Please provide your vROps Credentials"
-    #>
 
     if ($AuthSource -eq "") {
         $AuthSource = "LOCAL"
     }
 
+    # Gets the access token based on credentials.
     function Get-vROpsAccessToken {
         param (
             [Parameter(Mandatory=$true)]$RemoteCollector,
@@ -69,6 +66,7 @@ function Get-VMsWithTelegrafInstalled {
         return $AllWindowsOSObjects
     }
 
+    # Takes json response from Get-AllWindowsOSObjects and converts it to a hashtable.
     function Optimize-ListOfWindowsOSObjects {
 
         param(
@@ -79,7 +77,7 @@ function Get-VMsWithTelegrafInstalled {
         $WinOSObjectsHashTable = @{}
 
         ForEach ($WinObj in $AllWindowsOSObjects) {
-            # Write-Host $WinObj.resourceKey.name $WinObj.identifier
+            #DEBUG Write-Host $WinObj.resourceKey.name $WinObj.identifier
             $WinOSObjectsHashTable.Add($WinObj.resourceKey.name, $WinObj.identifier)
         }
 

@@ -14,8 +14,6 @@ function Add-WindowsOSServices {
     $global:accesstoken = ''
     ######## END HEADER FOR API CALLS ##########
 
-    #$Credential = Get-Credential -Message "Please provide your vROps Credentials"
-
     if ($AuthSource -eq "") {
         $AuthSource = "LOCAL"
     }
