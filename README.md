@@ -1,5 +1,6 @@
 # SingleVM-ServiceDiscovery
 THIS SCRIPT IS STILL UNDER DEVELOPMENT AND INCOMPLETE: Add-WindowsOSServices.psm1
+
 THIS OTHER SCRIPT IS TO GRAB ALL WINOS OBJECTS, IT IS ALSO INCOMPLETE: Get-VMsWithTelegrafInstalled.psm1
 ### Tl;dr
 - This script will auto-create VMware Application Management Pack Services Objects for Windows OS Virtual Machines that have the VMware vRealize Operations Integrated Telegraf Agent Installed (Managed Agent). 
